@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-unresolved
 import parser from "../src/index";
 
 describe("each parser", () => {
