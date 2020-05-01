@@ -7,7 +7,7 @@ type MyObject = { [key: string]: any };
 const isBetween0And9 = (str: string) => str >= "0" && str <= "9";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default (text: string): any => {
+const parser = (text: string): any => {
   // console.log(text);
   // 現在の文字のインデックス値
   let at = 0;
@@ -161,3 +161,5 @@ export default (text: string): any => {
   };
   return value();
 };
+
+export default parser;
