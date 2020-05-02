@@ -4,6 +4,11 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MyObject = { [key: string]: any };
 
+interface Next {
+  expect?: string;
+  autoShift?: boolean;
+}
+
 const isBetween0And9 = (str: string) => str >= "0" && str <= "9";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,15 +23,15 @@ const parser = (text: string): any => {
     throw new SyntaxError(`${errorMessage}, at position ${at}`);
   };
 
-  const next = (expect?: string): string | never => {
-    ch = text.charAt(at);
-    at++;
-
-    if (expect) {
-      if (ch === expect) return ch;
-      error(`Expected: ${expect}, Real: ${ch}`);
+  const next = (
+    { expect, autoShift = true }: Next = {} as Next
+  ): string | never => {
+    if (expect && ch !== expect) {
+      return error(`Expected: ${expect}, Real: ${ch}`);
     }
 
+    ch = text.charAt(at);
+    if (autoShift) at++;
     return ch;
   };
 
@@ -84,20 +89,23 @@ const parser = (text: string): any => {
   const boolOrNull = (): boolean | null | never => {
     switch (ch) {
       case "t":
-        next("r");
-        next("u");
-        next("e");
+        next({ expect: "t" });
+        next({ expect: "r" });
+        next({ expect: "u" });
+        next({ expect: "e" });
         return true;
       case "f":
-        next("a");
-        next("l");
-        next("s");
-        next("e");
+        next({ expect: "f" });
+        next({ expect: "a" });
+        next({ expect: "l" });
+        next({ expect: "s" });
+        next({ expect: "e" });
         return false;
       case "n":
-        next("u");
-        next("l");
-        next("l");
+        next({ expect: "n" });
+        next({ expect: "u" });
+        next({ expect: "l" });
+        next({ expect: "l" });
         return null;
       default:
         return error(
@@ -113,9 +121,13 @@ const parser = (text: string): any => {
       if (next() === "}") return o;
 
       const key = string();
-      next(":");
-      const v = value();
-      o[key] = v;
+      next({ expect: '"' });
+      o[key] = value();
+      // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+      // @ts-ignore
+      while (ch === "," || next() === ",") {
+        o[key] = value();
+      }
       return o;
     }
 
@@ -127,10 +139,7 @@ const parser = (text: string): any => {
     if (ch === "[") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const a = [] as any[];
-      if (next() === "]") return a;
-
-      // NOTE: rethink
-      at--;
+      if (next({ autoShift: false }) === "]") return a;
 
       a.push(value());
 
