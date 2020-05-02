@@ -8,6 +8,17 @@ type MyObject = { [key: string]: any };
 
 const isBetween0And9 = (str: string) => str >= "0" && str <= "9";
 
+const escapee = {
+  "'": "'",
+  "\\": "\\",
+  "/": "/",
+  b: "b",
+  f: "\f",
+  n: "\n",
+  r: "\r",
+  t: "\t"
+};
+
 const parser = (text: string): any => {
   // console.log(text);
   // 現在の文字のインデックス値
@@ -38,10 +49,29 @@ const parser = (text: string): any => {
   const string = (): string | never => {
     if (ch === '"') {
       let str = "";
+      let uffff = 0;
       while (next()) {
         if (ch === '"') {
           next();
           return str;
+        } else if (ch === "\\") {
+          next();
+          if (ch === "u") {
+            uffff = 0;
+            for (let i = 0; i < 4; i += 1) {
+              const hex = parseInt(next(), 16);
+              // eslint-disable-next-line no-restricted-globals
+              if (!isFinite(hex)) {
+                break;
+              }
+              uffff = uffff * 16 + hex;
+            }
+            str += String.fromCharCode(uffff);
+          } else if (typeof escapee[ch] === "string") {
+            str += escapee[ch];
+          } else {
+            break;
+          }
         } else {
           str += ch;
         }
@@ -130,6 +160,7 @@ const parser = (text: string): any => {
       }
 
       while (ch) {
+        trimWhiteSpace();
         const key = string();
         trimWhiteSpace();
         next(":");
