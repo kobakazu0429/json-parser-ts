@@ -1,17 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-use-before-define */
+/* eslint-disable @typescript-eslint/ban-ts-ignore */
 /* eslint-disable no-plusplus */
+/* eslint-disable no-else-return */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MyObject = { [key: string]: any };
-
-interface Next {
-  expect?: string;
-  autoShift?: boolean;
-}
 
 const isBetween0And9 = (str: string) => str >= "0" && str <= "9";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const parser = (text: string): any => {
   // console.log(text);
   // 現在の文字のインデックス値
@@ -23,25 +19,29 @@ const parser = (text: string): any => {
     throw new SyntaxError(`${errorMessage}, at position ${at}`);
   };
 
-  const next = (
-    { expect, autoShift = true }: Next = {} as Next
-  ): string | never => {
+  const next = (expect?: string): string | never => {
     if (expect && ch !== expect) {
       return error(`Expected: ${expect}, Real: ${ch}`);
     }
 
+    at++;
     ch = text.charAt(at);
-    if (autoShift) at++;
     return ch;
   };
 
-  const string = (): string => {
-    let str = "";
-
-    while (next() !== '"') {
-      str += ch;
+  const string = (): string | never => {
+    if (ch === '"') {
+      let str = "";
+      while (next()) {
+        if (ch === '"') {
+          next();
+          return str;
+        } else {
+          str += ch;
+        }
+      }
     }
-    return str;
+    return error("Bad string");
   };
 
   const number = (): number | never => {
@@ -89,23 +89,23 @@ const parser = (text: string): any => {
   const boolOrNull = (): boolean | null | never => {
     switch (ch) {
       case "t":
-        next({ expect: "t" });
-        next({ expect: "r" });
-        next({ expect: "u" });
-        next({ expect: "e" });
+        next("t");
+        next("r");
+        next("u");
+        next("e");
         return true;
       case "f":
-        next({ expect: "f" });
-        next({ expect: "a" });
-        next({ expect: "l" });
-        next({ expect: "s" });
-        next({ expect: "e" });
+        next("f");
+        next("a");
+        next("l");
+        next("s");
+        next("e");
         return false;
       case "n":
-        next({ expect: "n" });
-        next({ expect: "u" });
-        next({ expect: "l" });
-        next({ expect: "l" });
+        next("n");
+        next("u");
+        next("l");
+        next("l");
         return null;
       default:
         return error(
@@ -118,44 +118,57 @@ const parser = (text: string): any => {
     if (ch === "{") {
       const o = {} as MyObject;
 
-      if (next() === "}") return o;
-
-      const key = string();
-      next({ expect: '"' });
-      o[key] = value();
-      // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-      // @ts-ignore
-      while (ch === "," || next() === ",") {
-        o[key] = value();
+      if (next() === "}") {
+        next("}");
+        return o;
       }
-      return o;
+
+      while (ch) {
+        const key = string();
+        next(":");
+        o[key] = value();
+
+        // @ts-ignore
+        if (ch === "}") {
+          next("}");
+          return o;
+        }
+        next(",");
+      }
     }
 
     return error("Bad object");
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const array = (): any[] | never => {
     if (ch === "[") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      next("[");
+
       const a = [] as any[];
-      if (next({ autoShift: false }) === "]") return a;
 
-      a.push(value());
-
-      // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
       // @ts-ignore
-      while (ch === "," || next() === ",") {
-        a.push(value());
+      if (ch === "]") {
+        next("]");
+        return a;
       }
-      return a;
-    }
 
+      while (ch) {
+        a.push(value());
+
+        // @ts-ignore
+        if (ch === "]") {
+          next("]");
+          return a;
+        }
+        next(",");
+      }
+    }
     return error("Bad array");
   };
 
   const value = () => {
-    switch (next()) {
+    switch (ch) {
       case "{":
         return object();
       case "[":
