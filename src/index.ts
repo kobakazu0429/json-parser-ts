@@ -29,6 +29,12 @@ const parser = (text: string): any => {
     return ch;
   };
 
+  const trimWhiteSpace = (): void => {
+    while (ch && ch <= " ") {
+      next();
+    }
+  };
+
   const string = (): string | never => {
     if (ch === '"') {
       let str = "";
@@ -117,7 +123,7 @@ const parser = (text: string): any => {
   const object = (): MyObject | never => {
     if (ch === "{") {
       const o = {} as MyObject;
-
+      trimWhiteSpace();
       if (next() === "}") {
         next("}");
         return o;
@@ -125,14 +131,18 @@ const parser = (text: string): any => {
 
       while (ch) {
         const key = string();
+        trimWhiteSpace();
         next(":");
+        trimWhiteSpace();
         o[key] = value();
+        trimWhiteSpace();
 
         // @ts-ignore
         if (ch === "}") {
           next("}");
           return o;
         }
+        trimWhiteSpace();
         next(",");
       }
     }
@@ -140,10 +150,11 @@ const parser = (text: string): any => {
     return error("Bad object");
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const array = (): any[] | never => {
     if (ch === "[") {
       next("[");
+
+      trimWhiteSpace();
 
       const a = [] as any[];
 
@@ -155,6 +166,7 @@ const parser = (text: string): any => {
 
       while (ch) {
         a.push(value());
+        trimWhiteSpace();
 
         // @ts-ignore
         if (ch === "]") {
@@ -162,12 +174,15 @@ const parser = (text: string): any => {
           return a;
         }
         next(",");
+        trimWhiteSpace();
       }
     }
     return error("Bad array");
   };
 
   const value = () => {
+    trimWhiteSpace();
+
     switch (ch) {
       case "{":
         return object();
