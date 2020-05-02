@@ -19,13 +19,13 @@ describe("each parser", () => {
 
     test(`"undefined" shoule be throw error`, () => {
       expect(() => parser("undefined")).toThrowError(
-        /Expected: true, false or null, Real: unknown. \(NOTE: undefined is not defined as JSON schema.\), at position [\d]+$/
+        /Expected: true, false or null, Real: [\w]+. \(NOTE: undefined is not defined as JSON schema.\), at position [\d]+$/
       );
     });
 
     test(`"sometext" shoule be throw error`, () => {
       expect(() => parser("sometext")).toThrowError(
-        /Expected: true, false or null, Real: unknown. \(NOTE: undefined is not defined as JSON schema.\), at position [\d]+$/
+        /Expected: true, false or null, Real: [\w]+. \(NOTE: undefined is not defined as JSON schema.\), at position [\d]+$/
       );
     });
   });

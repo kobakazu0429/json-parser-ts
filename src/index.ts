@@ -109,7 +109,7 @@ const parser = (text: string): any => {
         return null;
       default:
         return error(
-          `Expected: true, false or null, Real: unknown. (NOTE: undefined is not defined as JSON schema.)`
+          `Expected: true, false or null, Real: ${ch}. (NOTE: undefined is not defined as JSON schema.)`
         );
     }
   };
